@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: STD24029
+  description: "This is a specification of STD24029"
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns a simple "Ok" text response to verify the API is running
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Ok"
+
+  /phones:
+    get:
+      summary: Get all phones
+      description: Retrieve the list of all phones stored in memory
+      responses:
+        '200':
+          description: List of phones retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhoneResponse'
+
+    post:
+      summary: Create a new phone
+      description: Create a new phone object and save it in memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneCreate'
+      responses:
+        '201':
+          description: Phone created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneResponse'
+
+  /phones/{id}:
+    get:
+      summary: Get a specific phone
+      description: Retrieve a phone by its identifier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The identifier of the phone to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Phone retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneResponse'
+        '404':
+          description: Phone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /phones/{id}/characteristics:
+    put:
+      summary: Update phone characteristics
+      description: Update the characteristics (RAM and ROM memory) of a specific phone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The identifier of the phone to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Characteristic'
+      responses:
+        '200':
+          description: Phone characteristics updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneResponse'
+        '404':
+          description: Phone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Characteristic:
+      type: object
+      required:
+        - ram_memory
+        - rom_memory
+      properties:
+        ram_memory:
+          type: integer
+          description: RAM memory in GB
+          example: 8
+        rom_memory:
+          type: integer
+          description: ROM memory in GB
+          example: 256
+
+    PhoneBase:
+      type: object
+      required:
+        - brand
+        - model
+        - characteristics
+      properties:
+        brand:
+          type: string
+          description: The brand of the phone
+          example: "Apple"
+        model:
+          type: string
+          description: The model of the phone
+          example: "iPhone 7 plus"
+        characteristics:
+          $ref: '#/components/schemas/Characteristic'
+
+    PhoneCreate:
+      allOf:
+        - $ref: '#/components/schemas/PhoneBase'
+      description: Schema for creating a new phone
+
+    PhoneResponse:
+      allOf:
+        - $ref: '#/components/schemas/PhoneBase'
+        - type: object
+          required:
+            - identifier
+          properties:
+            identifier:
+              type: string
+              description: Unique identifier of the phone
+              example: "166e4567-e89b-12d3-a456-426614174000"
+      description: Schema for phone response
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Phone with id 166 not found or does not exist"
